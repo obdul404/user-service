@@ -42,11 +42,11 @@ app = FastAPI(lifespan=lifespan, title="Hello World API with DB",
     version="0.0.1",
     servers=[
         {
-            "url": "http://127.0.0.1:8000", # ADD NGROK URL Here Before Creating GPT Action
+            "url": "http://localhost:8000", # ADD NGROK URL Here Before Creating GPT Action
             "description": "Development Server"
         }
         ])
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return {"service": "user"}
