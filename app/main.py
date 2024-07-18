@@ -1,33 +1,13 @@
 # main.py
 from contextlib import asynccontextmanager
 from typing import Union, Optional, Annotated
-from app import settings
 from sqlmodel import Field, Session, SQLModel, create_engine, select, Sequence
 from fastapi import FastAPI, Depends
 from typing import AsyncGenerator
-from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 import asyncio
 import json
-
-
-# only needed for psycopg 3 - replace postgresql
-# with postgresql+psycopg in settings.DATABASE_URL
-connection_string = str(settings.DATABASE_URL).replace(
-    "postgresql", "postgresql+psycopg"
-)
-
-
-# recycle connections after 5 minutes
-# to correspond with the compute scale down
-engine = create_engine(
-    connection_string, connect_args={}, pool_recycle=300
-)
-
-#engine = create_engine(
-#    connection_string, connect_args={"sslmode": "require"}, pool_recycle=300
-#)
-
-
+from app.db import session
+from app.api.v1.enpoints import user
 
 # The first part of the function, before the yield, will
 # be executed before the application starts.
@@ -36,6 +16,8 @@ engine = create_engine(
 @asynccontextmanager
 async def lifespan(app: FastAPI)-> AsyncGenerator[None, None]:
     print("starting async tasks")
+    session.create_db_and_tables()
+    print("Migration is done")
     yield
 
 app = FastAPI(lifespan=lifespan, title="Hello World API with DB", 
@@ -47,6 +29,4 @@ app = FastAPI(lifespan=lifespan, title="Hello World API with DB",
         }
         ])
 
-@app.get("/")
-def read_root():
-    return {"service": "user"}
+app.include_router(user.router, prefix="/users", tags=["users"])
